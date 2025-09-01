@@ -7,7 +7,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_executable(
     Cloud
     main.cpp
+
     Grid_Construction/vector3D.cpp
+
+    Surface/ply.c
+    Surface/MarchingCubes.cpp
+
 )
 
 
