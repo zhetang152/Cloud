@@ -35,7 +35,7 @@ WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
-#include <ply.h>
+#include "ply.h"
 
 char *type_names[] = {  /* names of scalar types */
 "invalid",
@@ -60,13 +60,13 @@ int ply_type_size[] = {
 #define NAMED_PROP       1
 
 /* returns 1 if strings are equal, 0 if not */
-int equal_strings(char *, char *);
+int equal_strings(const char *, const char *);
 
 /* find an element in a plyfile's list */
-PlyElement *find_element(PlyFile *, char *);
+PlyElement *find_element(PlyFile *, const char *);
 
 /* find a property in an element's list */
-PlyProperty *find_property(PlyElement *, char *, int *);
+PlyProperty *find_property(PlyElement *, const char *, int *);
 
 /* write to a file the word describing a PLY file data type */
 void write_scalar_type (FILE *, int);
@@ -129,7 +129,7 @@ Exit:
 PlyFile *ply_write(
   FILE *fp,
   int nelems,
-  char **elem_names,
+  const char **elem_names,
   int file_type
 )
 {
@@ -182,9 +182,9 @@ Exit:
 ******************************************************************************/
 
 PlyFile *open_for_writing_ply(
-  char *filename,
+  const char *filename,
   int nelems,
-  char **elem_names,
+  const char **elem_names,
   int file_type
 )
 {
@@ -234,7 +234,7 @@ Entry:
 
 void element_layout_ply(
   PlyFile *plyfile,
-  char *elem_name,
+  const char *elem_name,
   int nelems,
   int nprops,
   PlyProperty *prop_list
@@ -329,7 +329,7 @@ Entry:
 
 void element_count_ply(
   PlyFile *plyfile,
-  char *elem_name,
+  const char *elem_name,
   int nelems
 )
 {
@@ -433,7 +433,7 @@ Entry:
   elem_name - name of element we're talking about
 ******************************************************************************/
 
-void put_element_setup_ply(PlyFile *plyfile, char *elem_name)
+void put_element_setup_ply(PlyFile *plyfile, const char *elem_name)
 {
   PlyElement *elem;
 
@@ -771,7 +771,7 @@ Exit:
 
 PlyProperty **get_element_description_ply(
   PlyFile *plyfile,
-  char *elem_name,
+  const char *elem_name,
   int *nelems,
   int *nprops
 )
@@ -815,7 +815,7 @@ Entry:
 
 void get_element_setup_ply(
   PlyFile *plyfile,
-  char *elem_name,
+  const char *elem_name,
   int nprops,
   PlyProperty *prop_list
 )
@@ -1113,7 +1113,7 @@ Exit:
 
 PlyOtherProp *ply_get_other_properties(
   PlyFile *plyfile,
-  char *elem_name,
+  const char *elem_name,
   int offset
 )
 {
@@ -1158,7 +1158,7 @@ PlyOtherElems *get_other_element_ply (PlyFile *plyfile)
 {
   int i;
   PlyElement *elem;
-  char *elem_name;
+  const char *elem_name;
   int elem_count;
   PlyOtherElems *other_elems;
   OtherElem *other;
@@ -1189,7 +1189,7 @@ PlyOtherElems *get_other_element_ply (PlyFile *plyfile)
   other->elem_count = elem_count;
 
   /* save name of element */
-  other->elem_name = strdup (elem_name);
+  other->elem_name = (char*)elem_name;
 
   /* create a list to hold all the current elements */
   other->other_data = (OtherData **)
@@ -1302,7 +1302,7 @@ void get_info_ply(PlyFile *ply, float *version, int *file_type)
 Compare two strings.  Returns 1 if they are the same, 0 if not.
 ******************************************************************************/
 
-int equal_strings(char *s1, char *s2)
+int equal_strings(const char *s1, const char *s2)
 {
   int i;
 
@@ -1361,7 +1361,7 @@ Exit:
   returns the element, or NULL if not found
 ******************************************************************************/
 
-PlyElement *find_element(PlyFile *plyfile, char *element)
+PlyElement *find_element(PlyFile *plyfile, const char *element)
 {
   int i;
 
@@ -1385,7 +1385,7 @@ Exit:
   returns a pointer to the property, or NULL if not found
 ******************************************************************************/
 
-PlyProperty *find_property(PlyElement *elem, char *prop_name, int *index)
+PlyProperty *find_property(PlyElement *elem, const char *prop_name, int *index)
 {
   int i;
 
@@ -2482,7 +2482,7 @@ Exit:
 PlyFile *write_ply(
   FILE *fp,
   int nelems,
-  char **elem_names,
+  const char **elem_names,
   int file_type
 )
 {
@@ -2530,7 +2530,7 @@ Entry:
   comment - the comment to append
 ******************************************************************************/
 
-void append_comment_ply(PlyFile *ply, char *comment)
+void append_comment_ply(PlyFile *ply, const char *comment)
 {
   /* (re)allocate space for new comment */
   if (ply->num_comments == 0)
@@ -2570,7 +2570,7 @@ Entry:
   obj_info - the object info to append
 ******************************************************************************/
 
-void append_obj_info_ply(PlyFile *ply, char *obj_info)
+void append_obj_info_ply(PlyFile *ply, const char *obj_info)
 {
   /* (re)allocate space for new info */
   if (ply->num_obj_info == 0)
@@ -2641,7 +2641,7 @@ Exit:
   returns pointer to the name of this next element
 ******************************************************************************/
 
-char *setup_element_read_ply (PlyFile *ply, int index, int *elem_count)
+const char *setup_element_read_ply (PlyFile *ply, int index, int *elem_count)
 {
   PlyElement *elem;
 
@@ -2755,7 +2755,7 @@ Entry:
 
 void describe_element_ply(
   PlyFile *plyfile,
-  char *elem_name,
+  const char *elem_name,
   int nelems
 )
 {
@@ -2943,7 +2943,7 @@ Exit:
   returns pointer to the default rules
 ******************************************************************************/
 
-PlyPropRules *init_rule_ply (PlyFile *ply, char *elem_name)
+PlyPropRules *init_rule_ply (PlyFile *ply, const char *elem_name)
 {
   int i,j;
   PlyElement *elem;
@@ -3014,7 +3014,7 @@ Entry:
   rule_type - type of rule (MAXIMUM_RULE, MINIMUM_RULE, MAJORITY_RULE, etc.)
 ******************************************************************************/
 
-void modify_rule_ply (PlyPropRules *rules, char *prop_name, int rule_type)
+void modify_rule_ply (PlyPropRules *rules, const char *prop_name, int rule_type)
 {
   int i;
   PlyElement *elem = rules->elem;
@@ -3137,7 +3137,7 @@ void *get_new_props_ply(PlyFile *ply)
   }
 
   /* in case we need a random choice */
-  random_pick = (int) floor (rules->nprops * drand48());
+  random_pick = (int) floor (rules->nprops * ((double)rand() / RAND_MAX));
 
   /* calculate the combination for each "other" property of the element */
 
@@ -3243,8 +3243,8 @@ Exit:
 
 PlyRuleList *append_prop_rule (
   PlyRuleList *rule_list,
-  char *name,
-  char *property
+  const char *name,
+  const char *property
 )
 {
   PlyRuleList *rule;
@@ -3300,7 +3300,7 @@ Exit:
   returns 1 if we find a match, 0 if not
 ******************************************************************************/
 
-int matches_rule_name (char *name)
+int matches_rule_name (const char *name)
 {
   int i;
 

@@ -1107,7 +1107,7 @@ void MarchingCubes::writePLY(const char *fn, bool bin )
   int          i ;
   PlyFace     face ;
   int         verts[3] ;
-  char       *elem_names[]  = { "vertex", "face" };
+  const char       *elem_names[]  = { "vertex", "face" };
   printf("Marching Cubes::writePLY(%s)...", fn ) ;
   ply = write_ply ( fp, 2, elem_names, bin? PLY_BINARY_LE : PLY_ASCII );
 
@@ -1190,7 +1190,7 @@ void MarchingCubes::readPLY(const char *fn )
   for ( int i = 0; i < ply->num_elem_types; ++i )
   {
     int elem_count ;
-    char *elem_name = setup_element_read_ply ( ply, i, &elem_count );
+    const char *elem_name = setup_element_read_ply ( ply, i, &elem_count );
     if ( equal_strings ( "vertex", elem_name ) )
       _Nverts = _nverts = elem_count;
     if ( equal_strings ( "face",   elem_name ) )
@@ -1209,7 +1209,7 @@ void MarchingCubes::readPLY(const char *fn )
   {
     /* prepare to read the i'th list of elements */
     int elem_count ;
-    char *elem_name = setup_element_read_ply ( ply, i, &elem_count );
+    const char *elem_name = setup_element_read_ply ( ply, i, &elem_count );
 
     //-----------------------------------------------------------------------------
     if ( equal_strings ( "vertex", elem_name ) )

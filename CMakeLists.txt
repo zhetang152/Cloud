@@ -10,13 +10,17 @@ add_executable(
 
     Grid_Construction/vector3D.cpp
 
-    Surface/ply.c
     Surface/MarchingCubes.cpp
+    Surface/ply.c
 
 )
 
 
 target_include_directories(
     Cloud
-    PUBLIC ${CMAKE_SOURCE_DIR}
+    PUBLIC
+    ${CMAKE_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/Surface
+    ${CMAKE_SOURCE_DIR}/NOISE
+    ${CMAKE_SOURCE_DIR}/Grid_Construction
 )
