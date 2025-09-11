@@ -1,91 +1,136 @@
-#include<algorithm>
-#include<chrono>
-#include <fstream> // 用于文件读写
-#include<iostream>
-#include<vector>
-#include "NOISE\PerlinNoise.hpp"
-#include "Surface\MarchingCubes.h"
+#include <iostream>
+#include <chrono>
+#include <vector>
+#include <fstream>
+#include <algorithm>
+#include <cmath>
+#include "NOISE/PerlinNoise.hpp"
+#include "Surface/MarchingCubes.h"
+#include "Grid_Construction/vector3D.hpp" // 确保包含了 Vector3D
 
-float smoothstep(float edge0, float edge1, float x){
-    x = std::max(0.0f,std::min(1.0f, (x - edge0)/(edge1 - edge0)));
+// 平滑过渡函数
+float smoothstep(float edge0, float edge1, float x) {
+    x = std::max(0.0f, std::min(1.0f, (x - edge0) / (edge1 - edge0)));
     return x * x * (3.0f - 2.0f * x);
 }
 
+// 定义一个云团块的结构体
+struct CloudClump {
+    Vector3D center; // 云团中心位置
+    float radius;    // 云团半径
+};
+
 int main() {
-    // 1. 使用种子创建Perlin噪声生成器
-    unsigned int seed = 1338; // 使用一个固定种子，方便每次生成同样的结果
-    // unsigned int seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+    // 1. 噪声生成器
+    unsigned int seed = 1337;
     PerlinNoise perlin(seed);
     std::cout << "使用种子: " << seed << "\n";
 
-    // 2. 定义生成的参数
-    const int resolution = 64; // 在一个 64x64x64 的立方体中采样
-    //const float frequency = 5.0f;    // 噪声频率，控制云朵特征的大小
-    const float threshold = 0.5f;   // 密度阈值, 作为marching cubes的iso值
+    // 2. 参数定义
+    const int resolution = 128; 
+    const float threshold = 0.25f;
 
-    //3. 初始化MarchingCubes对象
+    // 3. MarchingCubes 初始化
     MarchingCubes mc(resolution, resolution, resolution);
     mc.init_all();
 
-    std::cout << "正在生成OBJ文件，分辨率 " << resolution << "^3 ...\n";
-    // fbm 参数
-    int octaves = 6; //叠加层数
-    float frequency = 2.0f; //初始频率
-    float amplitude = 1.0f; //初始振幅
-    float lacunarity = 2.0f; //频率倍增因子
-    float persistence = 0.5f; //振幅衰减因子
+    std::cout << "正在生成模型文件，分辨率 " << resolution << "^3 ...\n";
 
-    //云层形状参数
-    float cloud_center_y = 0.6f; //云层中心高度
-    float height = 0.4f; //云层垂直半径
-    float bottom_falloff_start = 0.4f; //云层底部开始衰减的高度
-    // 4. 遍历采样区域的每一个点
+    // ==================== 坐标系修正后的核心代码 ====================
+
+    // A. 定义组成积云的多个“云团块” (现在中心点Z坐标代表高度)
+    std::vector<CloudClump> clumps;
+    // 一个较大的主基座云团，位置较低
+    clumps.push_back({Vector3D(0.0f, 0.0f, -0.2f), 0.5f});
+    // 几个堆叠在上面的、小一些的、位置随机的云团
+    clumps.push_back({Vector3D(0.2f, 0.1f, 0.0f), 0.35f});
+    clumps.push_back({Vector3D(-0.25f, -0.1f, 0.1f), 0.4f});
+    clumps.push_back({Vector3D(-0.0f, 0.2f, 0.2f), 0.3f});
+    clumps.push_back({Vector3D(0.1f, -0.15f, 0.25f), 0.3f});
+
+
+    // B. 噪声参数
+    float shape_freq = 1.5f;
+    int detail_octaves = 5;
+    float detail_freq = 8.0f;
+    float detail_persistence = 0.5f;
+    
+    // C. 物理启发参数 (现在基于Z轴)
+    float cloud_scale_xy = 1.0f;       // 云朵在水平方向(XY)的拉伸
+    float cloud_scale_z = 1.5f;        // 云朵在垂直方向(Z)的拉伸
+    float cloud_center_z = -0.2f;      // 云朵中心的垂直位置 [-1, 1]
+    float condensation_height = -0.6f; // **物理上的“凝结高度” (Z轴)**
+    float condensation_falloff = 0.25f;
+
+    // 4. 核心循环
     for (int k = 0; k < resolution; ++k) {
         for (int j = 0; j < resolution; ++j) {
             for (int i = 0; i < resolution; ++i) {
-                // a. 将整数格点坐标映射到 [0, 1] 区间，再乘以频率
-                float x = static_cast<float>(i) / resolution;
-                float y = static_cast<float>(j) / resolution;
-                float z = static_cast<float>(k) / resolution;
+                
+                // a. 坐标转换到 [-1, 1] 空间
+                float x = 2.0f * (static_cast<float>(i) / (resolution - 1) - 0.5f);
+                float y = 2.0f * (static_cast<float>(j) / (resolution - 1) - 0.5f);
+                float z = 2.0f * (static_cast<float>(k) / (resolution - 1) - 0.5f);
+                
+                // b. 计算多个云团聚合后的基础密度
+                float max_clump_density = 0.0f;
+                for (const auto& clump : clumps) {
+                    // **核心修正：距离计算时，Z轴应用垂直拉伸**
+                    float dx = (x - clump.center.x) / cloud_scale_xy;
+                    float dy = (y - clump.center.y) / cloud_scale_xy;
+                    float dz = (z - clump.center.z) / cloud_scale_z;
+                    float dist_sq = dx*dx + dy*dy + dz*dz;
+                    
+                    // 用半径的平方来定义影响范围
+                    float clump_radius_sq = (clump.radius * clump.radius);
 
-                // b. 获取该点的fbm噪声值
-                float total_noise = 0.0f;
-                float current_freq = frequency;
-                float current_amp = amplitude;
-                float max_amp = 0.0f; // 用于归一化
-
-                for(int l = 0; l<octaves; ++l){
-                    total_noise += perlin.getValue(x * current_freq, y * current_freq, z * current_freq) * current_amp;
-                    max_amp += current_amp;
-                    current_freq *= lacunarity;
-                    current_amp *= persistence;
+                    if (dist_sq < 1.0f) {
+                        float falloff = 1.0f - smoothstep(0.0f, 1.0f, dist_sq);
+                        max_clump_density = std::max(max_clump_density, falloff);
+                    }
                 }
-                float noise_value = total_noise / max_amp;
+                
+                // c. 用低频噪声侵蚀大的形状
+                float shape_noise = (perlin.getValue(x * shape_freq, y * shape_freq, z * shape_freq) + 1.0f) / 2.0f;
+                float eroded_density = max_clump_density - (1.0f - shape_noise);
+                eroded_density = std::max(0.0f, eroded_density);
 
-                //Perlin噪声输出范围约[-1,1]，我们先把它映射到[0,1]
-                float density = (noise_value + 1.0f) / 2.0f; 
-                // c.1 模拟热气泡的宏观形状
-                float dist_from_center_sq = x*x + (y-0.2f)*(y-0.2f)*2.0f + z*z; // y方向压扁，中心稍微抬高
-                float shape_mask = 1.0f - smoothstep(0.5f, 1.0f, dist_from_center_sq);
-                // c.2 创建平坦云底
-                float bottom_mask = smoothstep(-0.8f, -0.6f, y);
+                // d. **核心修正：模拟物理平底 (作用于Z轴)**
+                float bottom_mask = smoothstep(condensation_height, condensation_height + condensation_falloff, z);
+                float final_density = eroded_density * bottom_mask;
 
-                // d. 最终密度值 = 细节噪声 * 形状遮罩
-                float final_density = density * shape_mask * bottom_mask;
-
-                // e. 将密度值写入MarchingCubes对象
-                mc.set_data(density, i, j, k);
+                // e. 添加高频细节
+                if (final_density > 0.01f) {
+                    float detail_noise = 0.0f;
+                    float freq = detail_freq;
+                    float amp = 1.0f;
+                    for (int l = 0; l < detail_octaves; ++l) {
+                        detail_noise += perlin.getValue(x * freq, y * freq, z * freq) * amp;
+                        freq *= 2.0f;
+                        amp *= detail_persistence;
+                    }
+                    final_density -= detail_noise * detail_noise * 0.1f * smoothstep(0.0f, 0.3f, final_density);
+                    final_density = std::max(0.0f, final_density);
                 }
+
+                // f. 写入数据
+                mc.set_data(final_density, i, j, k);
             }
         }
-    //5. 运行MarchingCubes算法
+    }
+
+    // =================================================================
+
+    // 5. 运行Marching Cubes
     mc.run(threshold);
-    //6. 将生成的网格写入PLY文件
-    const char* filename = "D:\\Code\\XLAB\\Fluid\\result\\cloud_mesh.ply";
+
+    // 6. 保存结果
+    const char* filename = "cumulus_cloud_v3_correct_axis.ply";
     mc.writePLY(filename, false);
 
-    std::cout << "over" << std::endl;
-    // 释放资源
+    std::cout << "成功生成: " << filename << std::endl;
+    
+    // 7. 清理
     mc.clean_all();
 
     return 0;
