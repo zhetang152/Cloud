@@ -17,7 +17,7 @@ int main() {
     const float buoyancy_beta = 0.35f; //温度对浮力的影响系数
 
     //2. 初始化
-    MACGrid grid(resolution, resolution, resolution,1/resolution);
+    MACGrid grid(resolution, resolution, resolution,1.0f/resolution);
     grid.temperature().fill(ambient_temp);
     //播种一小块湿热空气作为云种子
     int centerX = resolution / 2;
@@ -90,7 +90,7 @@ int main() {
                 w(i, j, k) -= scale * (pressure(i, j, k) - pressure(i, j, k - 1)) / dx;
             }
         }
-        
+
         //d. 输出当前帧数据
         std::cout << "输出当前帧数据...\n";
         MarchingCubes mc(resolution, resolution, resolution);

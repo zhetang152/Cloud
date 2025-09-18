@@ -2,7 +2,7 @@
 #include<vector>
 
 namespace Solver {
-    float Solver::dotProduct(const Grid<float>& a, const Grid<float>& b, const Grid<CellType>& cellTypes) {
+    float dotProduct(const Grid<float>& a, const Grid<float>& b, const Grid<CellType>& cellTypes) {
     float result = 0.0f;
     int nx = a.getWidth();
     int ny = a.getHeight();
@@ -18,7 +18,7 @@ namespace Solver {
     }
     return result;
     }
-    void Solver::saxpy(Grid<float>& y, float a, const Grid<float>& x, const Grid<CellType>& cellTypes) {
+    void saxpy(Grid<float>& y, float a, const Grid<float>& x, const Grid<CellType>& cellTypes) {
         int nx = y.getWidth();
         int ny = y.getHeight();
         int nz = y.getDepth();
@@ -32,7 +32,7 @@ namespace Solver {
             }
         }
     }
-    Grid<float> Solver::discrete_divergence(const MACGrid& grid){
+    Grid<float> discrete_divergence(const MACGrid& grid){
         int nx = grid.celltypes().getWidth();
         int ny = grid.celltypes().getHeight();
         int nz = grid.celltypes().getDepth();
@@ -60,7 +60,7 @@ namespace Solver {
         }
         return negetivedivergence;
     }
-    void Solver::buildMatrixA(
+    void buildMatrixA(
     Grid<float>& Adiag, 
     Grid<float>& Aplus_i, 
     Grid<float>& Aplus_j, 
@@ -103,7 +103,7 @@ namespace Solver {
             }
         }
     }
-    void Solver::applyA(
+    void applyA(
         Grid<float>& result, 
         const Grid<float>& p,
         const Grid<CellType>& cellTypes,
@@ -162,7 +162,7 @@ namespace Solver {
             }
         }
     }
-    float Solver::dotProduct_FVM(const Grid<float>& a, const Grid<float>& b, const MACGrid& grid) {
+    float dotProduct_FVM(const Grid<float>& a, const Grid<float>& b, const MACGrid& grid) {
         float result = 0.0f;
         int nx = a.getWidth();
         int ny = a.getHeight();
@@ -179,7 +179,7 @@ namespace Solver {
         }
         return result;
     }
-    void Solver::saxpy_FVM(Grid<float>& y, float a, const Grid<float>& x, const MACGrid& grid){
+    void saxpy_FVM(Grid<float>& y, float a, const Grid<float>& x, const MACGrid& grid){
         int nx = y.getWidth();
         int ny = y.getHeight();
         int nz = y.getDepth();
@@ -195,7 +195,7 @@ namespace Solver {
             }
         }
     }
-    Grid<float> Solver::discrete_divergence_FVM(const MACGrid& grid){
+    Grid<float> discrete_divergence_FVM(const MACGrid& grid){
         int nx = grid.getDimX();
         int ny = grid.getDimY();
         int nz = grid.getDimZ();
@@ -327,7 +327,7 @@ namespace Solver {
             }
         };
     }
-    void Solver::applyA_FVM(
+    void applyA_FVM(
         Grid<float>& result, 
         const Grid<float>& p,
         const MACGrid& grid,
@@ -561,7 +561,7 @@ namespace Solver {
             }
         }
     }
-    void Solver::applyPreconditioner_FVM(
+    void applyPreconditioner_FVM(
         Grid<float>& z,
         const Grid<float>& r,
         const Grid<float>& precon,
@@ -685,7 +685,7 @@ namespace Solver {
         }
         std::cout << "PCG did not converge after" << maxIterations << std::endl;
     };
-    void Solver::PCG_FVM(
+    void PCG_FVM(
         Grid<float>& p,
         const Grid<float>& b,
         const SystemMatrix& matrix,

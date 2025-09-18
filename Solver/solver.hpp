@@ -82,7 +82,7 @@ namespace Solver {
     const Grid<float>& Aplus_k,
     const MACGrid& grid // 传入 MACGrid 以获取 volumeFractions
 );
-void Solver::applyPreconditioner_FVM(
+void applyPreconditioner_FVM(
     Grid<float>& z,
     const Grid<float>& r,
     const Grid<float>& precon,

@@ -70,8 +70,6 @@ private:
     const Grid<float>& area_w() const { return m_area_w; }
     Grid<float>& u() { return m_u; }
     const Grid<float>& u() const { return m_u; }
-    Grid<float>& u() { return m_u; }
-    const Grid<float>& u() const { return m_u; }
     Grid<float>& v() { return m_v; }
     const Grid<float>& v() const { return m_v; }
     Grid<float>& w() { return m_w; }

@@ -10,7 +10,6 @@ add_executable(
     Advection/advection.cpp
 
     Force/General_Force/Buoyancy.cpp
-    Force/General_Force/GravityForce.cpp
 
     Grid_Construction/vector3D.cpp
 
