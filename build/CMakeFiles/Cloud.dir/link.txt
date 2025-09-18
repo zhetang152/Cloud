@@ -1,3 +1,0 @@
-E:\2\Work-App\cmake\bin\cmake.exe -E rm -f CMakeFiles\Cloud.dir/objects.a
-E:\2\Work-App\mingw64\bin\ar.exe qc CMakeFiles\Cloud.dir/objects.a @CMakeFiles\Cloud.dir\objects1.rsp
-E:\2\Work-App\mingw64\bin\g++.exe -g -Wl,--whole-archive CMakeFiles\Cloud.dir/objects.a -Wl,--no-whole-archive -o Cloud.exe -Wl,--out-implib,libCloud.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\Cloud.dir\linkLibs.rsp
