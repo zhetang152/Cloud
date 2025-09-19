@@ -6,6 +6,7 @@
 #include <fstream>
 #include <algorithm>
 #include <cmath>
+#include <random>
 
 #include "Advection/advection.hpp"
 

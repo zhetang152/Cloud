@@ -36,7 +36,6 @@ namespace Solver {
         int nx = grid.celltypes().getWidth();
         int ny = grid.celltypes().getHeight();
         int nz = grid.celltypes().getDepth();
-        float dx = grid.getDx();
         Grid<float> negetivedivergence(nx,ny,nz,0.0f);
         const auto& u = grid.u();
         const auto& v = grid.v();
@@ -53,7 +52,7 @@ namespace Solver {
                         float w_front = w(i,j,k+1);
                         float w_back = w(i,j,k);
                         float divergence = (u_right-u_left)+(v_top-v_bottom)+(w_front-w_back);
-                        negetivedivergence(i,j,k)=-divergence/dx;
+                        negetivedivergence(i,j,k)=-divergence;
                     }
                 }
             }
@@ -73,7 +72,7 @@ namespace Solver {
         int nx = Adiag.getWidth();
         int ny = Adiag.getHeight();
         int nz = Adiag.getDepth();
-        float scale = dt / (rho * dx * dx);
+        bool pressure_pinned = false;
 
         for (int k = 0; k < nz; ++k) {
             for (int j = 0; j < ny; ++j) {
@@ -85,19 +84,30 @@ namespace Solver {
                     Aplus_k(i, j, k) = 0.0f;
 
                     if (cellTypes(i, j, k) == CellType::FLUID) {
-                        float diag_val = 0;
-                        if (i < nx - 1 && cellTypes(i + 1, j, k) != CellType::AIR) diag_val++;
-                        if (i > 0     && cellTypes(i - 1, j, k) != CellType::AIR) diag_val++;
-                        if (j < ny - 1 && cellTypes(i, j + 1, k) != CellType::AIR) diag_val++;
-                        if (j > 0     && cellTypes(i, j - 1, k) != CellType::AIR) diag_val++;
-                        if (k < nz - 1 && cellTypes(i, j, k + 1) != CellType::AIR) diag_val++;
-                        if (k > 0     && cellTypes(i, j, k - 1) != CellType::AIR) diag_val++;
-                        
-                        Adiag(i,j,k) = diag_val * scale;
+                        if (!pressure_pinned) {
+                            Adiag(i, j, k) = 1.0f;
+                            pressure_pinned = true;
+                            continue;
+                        }
 
-                        if (i < nx - 1 && cellTypes(i + 1, j, k) == CellType::FLUID) Aplus_i(i,j,k) = -scale;
-                        if (j < ny - 1 && cellTypes(i, j + 1, k) == CellType::FLUID) Aplus_j(i,j,k) = -scale;
-                        if (k < nz - 1 && cellTypes(i, j, k + 1) == CellType::FLUID) Aplus_k(i,j,k) = -scale;
+                        float diag_val = 0;
+                        if (i < nx - 1 && cellTypes(i + 1, j, k) != CellType::SOLID) {
+                            diag_val++;
+                            if (cellTypes(i + 1, j, k) == CellType::FLUID) Aplus_i(i, j, k) = -1.0f;
+                        }
+                        if (i > 0 && cellTypes(i - 1, j, k) != CellType::SOLID) diag_val++;
+                        if (j < ny - 1 && cellTypes(i, j + 1, k) != CellType::SOLID) {
+                            diag_val++;
+                            if (cellTypes(i, j + 1, k) == CellType::FLUID) Aplus_j(i, j, k) = -1.0f;
+                        }
+                        if (j > 0 && cellTypes(i, j - 1, k) != CellType::SOLID) diag_val++;
+                        if (k < nz - 1 && cellTypes(i, j, k + 1) != CellType::SOLID) {
+                            diag_val++;
+                            if (cellTypes(i, j, k + 1) == CellType::FLUID) Aplus_k(i, j, k) = -1.0f;
+                        }
+                        if (k > 0 && cellTypes(i, j, k - 1) != CellType::SOLID) diag_val++;
+                        
+                        Adiag(i, j, k) = diag_val;
                     }
                 }
             }
